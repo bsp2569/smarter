@@ -7,9 +7,9 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 app = Flask(__name__)
-CORS(app)  # Enable Cross-Origin requests for Next.js
+CORS(app)  
 
-# Setup Vector DB (ChromaDB) - Runs locally in-memory or file
+# setup vector DB
 chroma_client = chromadb.Client()
 embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
     model_name="all-MiniLM-L6-v2"
@@ -36,12 +36,10 @@ def extract_elements(soup):
         if tag.name in blacklist:
             continue
 
-        # Get visible-ish text for this tag
+
         text = tag.get_text(" ", strip=True)
         if not text:
             continue
-
-        # Skip very tiny fragments (numbers, 1–2 words, etc.)
         if len(text.split()) < 5:
             continue
 
@@ -63,15 +61,14 @@ def search_content():
         return jsonify({"error": "URL and Query are required"}), 400
 
     try:
-        # 1. Fetch and parse HTML
+        #fetch and parse the webpage
         response = requests.get(url, timeout=10)
         soup = BeautifulSoup(response.content, "html.parser")
-
-        # 2. Clean obvious noise containers (we’ll still filter children)
+        #clean unwanted tags
         for tag in soup(["script", "style", "header", "footer", "nav"]):
             tag.decompose()
 
-        # 3. Extract DOM elements (text + html)
+        # Extract DOM elements 
         elements = extract_elements(soup)
 
         if not elements:
@@ -80,7 +77,7 @@ def search_content():
         texts = [el["text"] for el in elements]   # for embeddings
         html_chunks = [el["html"] for el in elements]
 
-        # 4. Create a fresh collection for this search (ephemeral)
+        # 4. Create temporary collection in ChromaDB
         collection_name = f"search_{uuid.uuid4().hex}"
         collection = chroma_client.create_collection(
             name=collection_name,
@@ -104,16 +101,14 @@ def search_content():
             metadatas=metadatas,
         )
 
-        # 5. Semantic search over the element texts
+        #semantic search
         results = collection.query(
             query_texts=[query_text],
             n_results=min(10, len(texts)),
         )
 
-        # 6. Cleanup collection
         chroma_client.delete_collection(collection_name)
-
-        # 7. Format output for frontend
+        #frontend output formatting
         formatted_results = []
         if results and "documents" in results:
             docs = results["documents"][0]
@@ -123,9 +118,8 @@ def search_content():
             for i, doc in enumerate(docs):
                 meta = metas[i] if i < len(metas) else {}
                 formatted_results.append({
-                    # Plain text snippet (for the title / summary line)
+                    
                     "text": doc,
-                    # Raw HTML snippet of the DOM element – what you asked for
                     "html": meta.get("html", ""),
                     "tag": meta.get("tag", ""),
                     "score": distances[i],
