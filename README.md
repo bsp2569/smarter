@@ -23,15 +23,15 @@ root/
 
 ## Backend:
 **Create Virtual Environment**
-	{{{
+	
 	cd backend
 	python3 -m venv venv
 	source venv/bin/activate    # mac
 	venv\Scripts\activate       # Windows
-	}}
+	
 
 **Install dependencies present in requirements.txt file**
-pip install -r requirements.txt
+	pip install -r requirements.txt
 
 **Run the flask app**
 python app.py
