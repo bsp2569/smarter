@@ -1,0 +1,7 @@
+flask
+flask-cors
+requests
+beautifulsoup4
+chromadb[sqlite]==0.5.3
+sentence-transformers
+pydantic==1.10.13
